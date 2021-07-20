@@ -4,6 +4,7 @@ import {
   Controller,
   Delete,
   Get,
+  NotFoundException,
   Param,
   Patch,
   Post,
@@ -16,7 +17,7 @@ import { GuildsEntity } from '@/guilds.entity';
 import { UserEntity } from '@/user.entity';
 import { UserService } from '$/users/user.service';
 import { GuildsService } from './guilds.service';
-import { IGuild } from '@/user.interface copy';
+import { IGuild } from '@/guild.interface';
 
 @Controller('guilds')
 @UseGuards(AuthenticatedGuard)
@@ -27,8 +28,13 @@ export class GuildsController {
   ) {}
 
   @Get()
-  async seeAll() {
+  async seeAll(): Promise<GuildsEntity[]> {
     return this.guildsService.getAll();
+  }
+
+  @Get(':anagram')
+  async seeOne(@Param('anagram') anagram: string): Promise<GuildsEntity> {
+    return this.guildsService.findGuild(anagram);
   }
 
   @Patch('change_anagram/:anagram')
@@ -54,6 +60,9 @@ export class GuildsController {
     @Body() guild: IGuild,
     @User() user: UserEntity,
   ): Promise<UserEntity> {
+    //only for testing
+    // user = await this.userService.findUser('de33df29-0037-44d9-9dfe-a6e4010a0a77');
+    //only for testing
     this.guildsService.createGuild(user, guild);
     return this.userService.joinGuild(user.id, guild.anagram);
   }
@@ -63,8 +72,10 @@ export class GuildsController {
     @Param('anagram') anagram: string,
     @User() user: UserEntity,
   ): Promise<DeleteResult> {
-    const guild = await this.guildsService.findGuildAnagram(anagram);
-    if (!(user.admin || (guild && guild.owner.id === user.id)))
+    const guild = await this.guildsService.findGuild(anagram);
+    if (!guild) throw new NotFoundException();
+
+    if (!(user.site_admin || guild.owner.id === user.id))
       throw new BadRequestException();
 
     return this.guildsService.deleteGuild(anagram);
@@ -74,10 +85,4 @@ export class GuildsController {
   async guildsRankList(): Promise<GuildsEntity[]> {
     return await this.guildsService.guildsRankList();
   }
-
-  // delete this one // TODO - just for testing with guild rankings
-  // @Post('win')
-  // async Guildwin() {
-  //   return this.guildsService.guildWin('jambo', 50);
-  // }
 }

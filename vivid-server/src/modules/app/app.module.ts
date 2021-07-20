@@ -4,16 +4,18 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import configuration from '~/config/configuration';
-
 import { UserModule } from '$/users/user.module';
-import { WarsModule } from '$/wars/wars.module';
+import { WarsModule } from '~/modules/wars/wars.module';
 import { ChannelModule } from '$/channels/channel.module';
 import { AuthModule } from '$/auth/auth.module';
+import { EventModule } from '$/websocket/event.module';
 import { TypeORMSession } from '@/session.entity';
 import { FriendsModule } from '$/friends/friends.module';
 import { BlocksModule } from '$/blocks/blocks.module';
 import { GuildsModule } from '$/guilds/guilds.module';
 import { GuildrequestModule } from '$/guildrequest/guildrequest.module';
+import { MatchesModule } from '../matches/matches.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 const config = ConfigModule.forRoot({
   load: [configuration],
@@ -24,7 +26,7 @@ const config = ConfigModule.forRoot({
     // config & database
     config,
     TypeOrmModule.forRootAsync({
-      imports: [config],
+      imports: [config, ScheduleModule.forRoot()],
       useFactory: async (configService: ConfigService) => ({
         type: 'postgres',
         host: configService.get('db.host'),
@@ -43,11 +45,14 @@ const config = ConfigModule.forRoot({
     UserModule,
     ChannelModule,
     AuthModule,
+    EventModule,
     FriendsModule,
     BlocksModule,
+    WarsModule,
     GuildsModule,
     WarsModule,
     GuildrequestModule,
+    MatchesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
